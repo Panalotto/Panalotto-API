@@ -8,4 +8,5 @@ const home = new HomeController();
 
 homeRouter.get('/', home.getAllWinningLotto.bind(home));
 
+
 export default homeRouter;
