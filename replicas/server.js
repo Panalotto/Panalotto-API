@@ -20,7 +20,7 @@ const publicPath = "C:/Users/Administrator/Downloads/PortableGit/Panalotto-SPA/p
 
         app.use(express.static(publicPath)); 
     
-        // Serve only index.html (SPA)
+
         app.get("*", (req, res) => {
             res.sendFile(path.join(publicPath, "index.html"));
         });
