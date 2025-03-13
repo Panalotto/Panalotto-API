@@ -17,6 +17,9 @@ accountRouter.post('/login',account.login.bind(account));
 //Transaction
 accountRouter.post('/cashIn', account.addMoney.bind(account));
 
+accountRouter.delete('/cashOut', account.releaseMoney.bind(account));
+
+
 // create Account
 accountRouter.post('/',account.create.bind(account));
 

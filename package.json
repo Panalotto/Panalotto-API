@@ -1,14 +1,12 @@
 {
     "name": "minute-lotto",
     "version": "1.0.0",
-    "main": "master/server.js",
+    "main": "src/index.js",
     "type": "module",
     "scripts": {
         "dev": "node dist/index.js",
         "build": "parcel build src/index.html",
         "start": "nodemon --watch src src/index.js",
-        "master": "nodemon --watch master master/server.js",
-        "replicas": "nodemon --watch replicas replicas/server.js",
         "test": "echo \"Error: no test specified\" && exit 1"
     },
     "keywords": [],

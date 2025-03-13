@@ -94,117 +94,44 @@ class User{
             throw err;
         }
     }
-    
-    
-    
-    
 
+    async releaseBalance(username, amount){
 
-    async getProfileAccountPost(userId){
-        try{
-            const [result,] = await connection.execute(
-                `SELECT 
-                    u.user_id, 
-                    u.username, 
-                    p.content,
-                    p.post_id,
-                    p.parent_repost_id,
-                    u.profile_image,
-                    COALESCE(l.like_count, 0) AS like_count,
-                    COALESCE(r.replies_count, 0) AS replies_count,
-                    (SELECT COUNT(*) FROM posts WHERE parent_repost_id = p.post_id) AS repost_count
-                FROM posts p 
-                JOIN users u ON p.user_id = u.user_id
-                LEFT JOIN 
-                    (SELECT post_id, COUNT(*) AS like_count 
-                     FROM likes 
-                     GROUP BY post_id) l 
-                ON p.post_id = l.post_id
-                LEFT JOIN 
-                    (SELECT post_id, COUNT(*) AS replies_count 
-                     FROM replies 
-                     GROUP BY post_id) r 
-                ON p.post_id = r.post_id
-                WHERE u.user_id = ?
-                ORDER BY p.created_at DESC;`,
-                [userId]
-            )
-
-            return result
-        } catch (err){
-            console.error('<error> user.getProfileAccountPost', err);
-            throw err;
-        }
-    }
-
-    async updateUser(currentUsername, newUsername, currentPass, newPassword, bio, profile_img){
         try {
-            if (currentPass){
-                const [user] = await connection.execute(
-                    'SELECT password FROM users WHERE username = ?',
-                    [currentUsername]
-                );
+            if (!username || !amount) {
+                throw new Error("Username or amount is missing");
+            }
     
-                if (user.length === 0 || encryptPassword(currentPass) !== user[0].password){
-                    throw new Error('Current Password is incorrect.')
-                }
-            }
-
-            const fieldsToUpdate = [];
-            const values = []
-
-            if (newUsername) {
-                fieldsToUpdate.push('username = ?');
-                values.push(newUsername);
-            }
-
-            if (newPassword) {
-                const hashPassword = encryptPassword(newPassword);
-                fieldsToUpdate.push('password = ?');
-                values.push(hashPassword);
-            }
-
-            if (bio){
-                fieldsToUpdate.push('bio = ?');
-                values.push(bio);
-            }
-
-            if (profile_img) {
-                fieldsToUpdate.push('profile_image = ?');
-                values.push(profile_img);
-            }
-
-            console.log('field', fieldsToUpdate)
-            console.log('value', values)
-            console.log('current', currentUsername)
-
-            values.push(currentUsername);
-
-            const [result, ] = await connection.execute(
-                `UPDATE users SET ${fieldsToUpdate.join(', ')} WHERE username = ?`,
-                values,
-            )
-
-            return result;
-        } catch (err){
-            console.error('<error> user.updateUser', err);
-            throw err;
-        }
-    }
-
-    async deleteUser(username){
-        try{
             const [result] = await connection.execute(
-                'DELETE FROM users WHERE username = ?',
-                [username]
-            )
-
-            return result;
-        } catch (err){
-            console.error('<error> user.deleteUser', err);
+                'UPDATE users SET balance = balance - ? WHERE username = ?',
+                [amount, username]
+            );
+    
+            if (result.affectedRows > 0) {
+           
+                const [rows] = await connection.execute(
+                    'SELECT username, email, balance FROM users WHERE username = ?',
+                    [username]
+                );
+                return rows[0]; 
+            } else {
+                return null; 
+            }
+        } catch (err) {
+            console.error('<error> user.releaseBalance', err);
             throw err;
         }
+
     }
+    
+    
+    
+    
+
+
+    
+
+    
 
     async requestPasswordReset(email) {
         try {

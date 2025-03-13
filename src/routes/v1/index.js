@@ -2,7 +2,7 @@ import { Router } from 'express';
 
 import accountRouter from './accountRoutes.js';
 import homeRouter from './homeRoutes.js';
-import countdownRouter from './countdownRoutes.js';
+import resultRouter from './resultRoutes.js';
 
 
 
@@ -14,10 +14,13 @@ v1.use('/account', accountRouter);
 // home
 v1.use('/', homeRouter);
 
+// Draw
+v1.use('/draw', resultRouter);
+
+v1.use('/latest-drawId', resultRouter);
+
 
 // app.use("/api/countdown", countdownRoutes(io));
 
-
-v1.use('/countdown', countdownRouter)
 
 export default v1;
