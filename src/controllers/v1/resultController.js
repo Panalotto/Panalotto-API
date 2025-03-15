@@ -22,6 +22,40 @@ class ResultController {
         }
     }
 
+
+    
+
+    async latestDrawResult(req, res) {
+        try {
+            const latestDraw = await this.lottoResult.latestdraw_result();
+    
+            if (!latestDraw) {
+                return res.status(404).json({
+                    success: false,
+                    message: "No draw results found."
+                });
+            }
+    
+            return res.status(200).json({
+                success: true,
+                latest_draw_id: latestDraw.draw_id,  // ✅ Extract draw_id
+                draw_time: latestDraw.draw_time,
+                winning_numbers: latestDraw.winning_numbers  // ✅ Include numbers
+            });
+        } catch (error) {
+            console.error("<error> resultController.latestDrawResult", error);
+            return res.status(500).json({
+                success: false,
+                message: "Failed to fetch the latest draw result."
+            });
+        }
+    }
+    
+
+
+
+
+
     async insertResult(req, res) {
         try {
             const { draw_id, draw_time, winning_numbers } = req.body;

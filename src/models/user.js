@@ -68,6 +68,28 @@ class User{
     }
 
 
+    async logout_user(user_id) {
+        try {
+            const [result] = await connection.execute(
+                "UPDATE users SET token = NULL WHERE user_id = ?",
+                [user_id]
+            );
+    
+            if (result.affectedRows > 0) {
+                return { success: true, message: "Logout successful" };
+            } else {
+                return { success: false, message: "User not found or already logged out" };
+            }
+        } catch (err) {
+            console.error("<error> user.logOut", err);
+            throw err;
+        }
+    }
+    
+    
+    
+
+
     async addBalance(username, amount) {
         try {
             if (!username || !amount) {

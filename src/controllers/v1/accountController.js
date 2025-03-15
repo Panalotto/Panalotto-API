@@ -65,6 +65,31 @@ class AccountController{
         }
     }
 
+
+    async logout(req, res) {
+        try {
+            const userId = req.user?.user_id || req.body?.user_id;
+    
+            if (!userId) {
+                return res.status(400).json({ success: false, message: "User ID is required" });
+            }
+    
+            console.log(`Logging out user ID: ${userId}`); // Debugging log
+    
+            // Optional: Implement session/token invalidation logic here
+            const result = await this.user.logout_user(userId);
+            console.log("Logout result:", result); // Debugging log
+    
+            res.json({ success: true, message: "Logout successful" });
+        } catch (error) {
+            console.error("Logout error:", error); // Log the actual error
+            res.status(500).json({ success: false, message: "Internal Server Error", error: error.toString() });
+        }
+    }
+    
+    
+    
+
     
     async profile(req, res){
         try{

@@ -14,6 +14,11 @@ accountRouter.use(authorization);
 // Login
 accountRouter.post('/login',account.login.bind(account));
 
+//Logout 
+accountRouter.post('/logout', account.logout.bind(account));
+
+//
+
 //Transaction
 accountRouter.post('/cashIn', account.addMoney.bind(account));
 

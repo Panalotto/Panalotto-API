@@ -8,5 +8,7 @@ const result = new resultController();
 
 
 resultRouter.post('/', result.insertResult.bind(result));
-resultRouter.get('/', result.latestDrawId.bind(result));
+resultRouter.get('/latest-drawId', result.latestDrawId.bind(result));
+
+resultRouter.get('/latest-result' ,result.latestDrawResult.bind(result));
 export default resultRouter;

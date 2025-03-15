@@ -3,7 +3,7 @@ import { Router } from 'express';
 import accountRouter from './accountRoutes.js';
 import homeRouter from './homeRoutes.js';
 import resultRouter from './resultRoutes.js';
-
+import talpakRouter from './talpakRoutes.js';
 
 
 const v1 = new Router();
@@ -15,9 +15,14 @@ v1.use('/account', accountRouter);
 v1.use('/', homeRouter);
 
 // Draw
-v1.use('/draw', resultRouter);
+v1.use('/result', resultRouter);
 
-v1.use('/latest-drawId', resultRouter);
+//Talpak
+v1.use('/talpak', talpakRouter);
+
+
+
+// v1.use('/latest-drawId', resultRouter);
 
 
 // app.use("/api/countdown", countdownRoutes(io));
