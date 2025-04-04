@@ -1,0 +1,30 @@
+version: "3.8"
+
+services:
+  backend_api:
+    build: ./src
+    container_name: "minute-lottoApi"
+    environment:
+      - API_KEY=panalotto
+      - API_SECRET_KEY=jenather
+
+      - DB_HOST=mysql_master
+      - DB_HOST_SLAVE=mysql_slave
+      
+      - DB_USER=mydb_user
+      - DB_SLAVE_USER=mydb_slave_user
+      - DB_PASS=mydb_pwd
+      - DB_SLAVE_PASS=mydb_slave_pwd
+      - DB_NAME=minute-lotto
+    restart: "always"
+    ports:
+      - "3000:3000"
+    depends_on:
+      - mysql_master
+      - mysql_slave
+    networks:
+      - overlay
+
+networks:
+  overlay:
+    driver: bridge

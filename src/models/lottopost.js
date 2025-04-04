@@ -1,17 +1,21 @@
-import { connection } from "../core/database.js";
+import { masterConnection, slaveConnection } from "../core/database.js";
 
 
 class lottoPost {
     constructor() {
-        this.lotto = connection;
+        this.master = masterConnection;
+        this.slave = slaveConnection;
     
     }
-    async insert_Result(draw_id, draw_time, winning_numbers) {
+    async insert_Result(winning_numbers) {
         try {
-
-            const [result] = await this.lotto.execute(
-                `INSERT INTO lotto_draws (draw_id, draw_time, winning_numbers, created_at) VALUES (?, ?, ?, NOW())`,
-                [draw_id, draw_time, winning_numbers]
+            // Convert array to a comma-separated string
+            const winningNumbersString = winning_numbers;
+            console.log(winning_numbers);
+    
+            const [result] = await this.master.execute(
+                `INSERT INTO lotto_draws (winning_numbers, created_at) VALUES (?, NOW())`,
+                [winningNumbersString]
             );
             return result;
         } catch (err) {
@@ -20,10 +24,15 @@ class lottoPost {
         }
     }
 
-    async placebet(user_id, numbers, bet_amount) {
+    
+
+
+    
+
+    async placebet( user_id, numbers, bet_amount) {
         try {
             // Get user balance
-            const [user] = await this.lotto.execute(
+            const [user] = await this.slave.execute(
                 "SELECT balance FROM users WHERE user_id = ?",
                 [user_id]
             );
@@ -35,25 +44,26 @@ class lottoPost {
     
             // Get latest draw_id
             const draw_id = await this.latestdraw_id();
+
             if (!draw_id) throw new Error("No available draw ID.");
     
             console.log("Current Draw ID:", draw_id);  // Debugging
     
             // Insert bet
-            await this.lotto.execute(
+            await this.master.execute(
                 `INSERT INTO bets (draw_id, user_id, numbers, bet_amount) VALUES (?, ?, ?, ?)`,
-                [draw_id, user_id, numbers, bet_amount]
+                [draw_id , user_id, numbers, bet_amount]
             );
     
             // Deduct balance
             const newBalance = currentBalance - bet_amount;
-            await this.lotto.execute(
+            await this.master.execute(
                 "UPDATE users SET balance = ? WHERE user_id = ?",
                 [newBalance, user_id]
             );
     
             // Get previous draw talpak_money
-            const [previousPot] = await this.lotto.execute(
+            const [previousPot] = await this.slave.execute(
                 "SELECT talpak_money FROM lotto_pot_money ORDER BY draw_id DESC LIMIT 1"
             );
     
@@ -66,7 +76,7 @@ class lottoPost {
             let newTalpakMoney = previousTalpakMoney + bet_amount;
     
             // Insert or update new draw talpak_money
-            await this.lotto.execute(
+            await this.master.execute(
                 `INSERT INTO lotto_pot_money (draw_id, talpak_money) 
                  VALUES (?, ?) ON DUPLICATE KEY UPDATE talpak_money = ?`,
                 [draw_id, newTalpakMoney, newTalpakMoney]
@@ -81,10 +91,10 @@ class lottoPost {
     
     
     
-    //
+    // thi is for pot
     async getAllBets() {
         try {
-            const [result] = await this.lotto.execute(
+            const [result] = await this.slave.execute(
                 "SELECT draw_id, talpak_money FROM lotto_pot_money ORDER BY draw_id DESC LIMIT 1"
             );
     
@@ -99,6 +109,10 @@ class lottoPost {
         }
     }
     
+    // it will check all bet on that draw-id 
+    // and get the winning numbers == numbers
+    
+    
     
     
 
@@ -108,7 +122,7 @@ class lottoPost {
 
     async latestdraw_id() {
         try {
-            const [rows] = await this.lotto.execute(
+            const [rows] = await this.slave.execute(
                 "SELECT MAX(draw_id) AS latest_draw_id FROM lotto_draws"
             );
     
@@ -121,20 +135,34 @@ class lottoPost {
     
     async latestdraw_result() {
         try {
-            const [rows] = await this.lotto.execute(
+            const [rows] = await this.slave.execute(
                 `SELECT draw_id, draw_time, winning_numbers, created_at 
                  FROM lotto_draws 
-                 ORDER BY created_at DESC 
-                 LIMIT 1`
+                 ORDER BY draw_id DESC 
+                 LIMIT 1 OFFSET 1`
             );
     
             if (rows.length > 0) {
-                let winningNumbers;
+                
+                let winningNumbers = rows[0].winning_numbers;
+    
+                console.log("<debug> Raw winning_numbers:", winningNumbers);
+    
                 try {
-                    winningNumbers = JSON.parse(rows[0].winning_numbers);
+                    winningNumbers = JSON.parse(winningNumbers);
+                    
+                    // Ensure it's an array
+                    if (!Array.isArray(winningNumbers)) {
+                        throw new Error("Parsed value is not an array");
+                    }
                 } catch (error) {
-                    console.warn("<warning> Invalid JSON format in winning_numbers:", rows[0].winning_numbers);
-                    winningNumbers = rows[0].winning_numbers.split(',').map(num => parseInt(num.trim(), 10));
+                    console.warn("<warning> Invalid JSON format in winning_numbers:", winningNumbers);
+                    
+                    // Handle hyphen-separated numbers
+                    winningNumbers = winningNumbers
+                        .split(/[-,]/)  // Supports both "-" and "," as delimiters
+                        .map(num => parseInt(num.trim(), 10))
+                        .filter(num => !isNaN(num)); // Remove NaN values
                 }
     
                 return {
@@ -150,21 +178,53 @@ class lottoPost {
         }
     }
     
+    
+
+    
 
     async getWinning() {
         try {
-            const [result] = await this.lotto.execute(
-                "SELECT MAX(draw_id) AS last_draw_id FROM lotto_draws"
+            const [rows] = await this.slave.execute(
+                "SELECT winning_numbers FROM lotto_draws WHERE draw_id = (SELECT MAX(draw_id) FROM lotto_draws)"
             );
-            return result[0]?.last_draw_id || 0;
+    
+            // Siguraduhing may result bago mag-access
+            if (rows.length === 0) return 0;
+    
+            return rows[0].winning_numbers;
         } catch (err) {
             console.error("<error> lottoPost.getWinning", err);
-            throw new Error("An error occurred while fetching the last draw ID.");
+            throw new Error("An error occurred while fetching the last winning numbers.");
         }
     }
-    
-    
 
+
+    async getalluserbet() {
+        try {
+            // Hanapin ang pinakabagong draw_id mula sa lotto_draws table
+            const [latestDraw] = await this.slave.execute(
+                "SELECT draw_id FROM lotto_draws ORDER BY created_at DESC LIMIT 1"
+            );
+    
+            const lastDrawId = latestDraw[0]?.draw_id;
+    
+            // Kung walang draw_id, ibalik lang na walang data
+            if (!lastDrawId) return { draw_id: null, bets: [] };
+    
+            // Kunin lahat ng bets para sa latest draw_id
+            const [rows] = await this.slave.execute(
+                "SELECT user_id, numbers, bet_amount FROM bets WHERE draw_id = ?",
+                [lastDrawId]
+            );
+    
+            return { draw_id: lastDrawId, bets: rows };
+        } catch (err) {
+            console.error("<error> lottoPost.getalluserbet", err);
+            throw new Error("An error occurred while fetching user bets.");
+        }
+    }
+
+    
     
     
 }

@@ -1,15 +1,16 @@
-import { connection } from "../core/database.js";
+import { masterConnection, slaveConnection } from "../core/database.js";
 import { encryptPassword } from '../utils/hash.js';
 
 
 class User{
     constructor() {
-        this.thread = connection
+        this.master = masterConnection
+        this.slave = slaveConnection
     }
 
     async create(username, email, password ){
         try{
-            const [existingUser] = await connection.execute(
+            const [existingUser] = await slaveConnection.execute(
                 'SELECT username, email FROM users WHERE username = ? OR email = ?',
                 [username, email]
             )
@@ -28,7 +29,7 @@ class User{
             const ass = encryptPassword(passwords)
             console.log(ass)
             const hashPassword = encryptPassword(password)
-            const [result,] = await connection.execute(
+            const [result,] = await masterConnection.execute(
                 'INSERT INTO users(username, email, password) VALUES (?, ?, ?)',
                 [username,email,hashPassword],
             );
@@ -42,7 +43,7 @@ class User{
     async verify(username,password){
         try{
             const hashPassword = encryptPassword(password)
-            const [result,] = await connection.execute(
+            const [result,] = await slaveConnection.execute(
                 'SELECT user_id, username, email FROM users WHERE username = ? AND password = ?',
                 [username, hashPassword],
             );
@@ -56,7 +57,7 @@ class User{
 
     async getUser(username){
         try{
-            const [result,] = await connection.execute(
+            const [result,] = await slaveConnection.execute(
                 'SELECT user_id, username, email, balance FROM users WHERE username = ?',
                 [username]
             )
@@ -70,7 +71,7 @@ class User{
 
     async logout_user(user_id) {
         try {
-            const [result] = await connection.execute(
+            const [result] = await masterConnection.execute(
                 "UPDATE users SET token = NULL WHERE user_id = ?",
                 [user_id]
             );
@@ -96,14 +97,14 @@ class User{
                 throw new Error("Username or amount is missing");
             }
     
-            const [result] = await connection.execute(
+            const [result] = await masterConnection.execute(
                 'UPDATE users SET balance = balance + ? WHERE username = ?',
                 [amount, username]
             );
     
             if (result.affectedRows > 0) {
            
-                const [rows] = await connection.execute(
+                const [rows] = await slaveConnection.execute(
                     'SELECT username, email, balance FROM users WHERE username = ?',
                     [username]
                 );
@@ -124,14 +125,14 @@ class User{
                 throw new Error("Username or amount is missing");
             }
     
-            const [result] = await connection.execute(
+            const [result] = await masterConnection.execute(
                 'UPDATE users SET balance = balance - ? WHERE username = ?',
                 [amount, username]
             );
     
             if (result.affectedRows > 0) {
            
-                const [rows] = await connection.execute(
+                const [rows] = await slaveConnection.execute(
                     'SELECT username, email, balance FROM users WHERE username = ?',
                     [username]
                 );

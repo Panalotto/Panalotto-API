@@ -58,17 +58,17 @@ class ResultController {
 
     async insertResult(req, res) {
         try {
-            const { draw_id, draw_time, winning_numbers } = req.body;
+            const { winning_numbers } = req.body;
 
             // Basic validation
-            if (!draw_id || !draw_time || !winning_numbers) {
+            if (!winning_numbers) {
                 return res.status(400).json({ message: "Missing required fields." });
             }
 
             
             console.log("Received Data:", req.body);
 
-            const newResult = await this.lottoResult.insert_Result(draw_id, draw_time, winning_numbers);
+            const newResult = await this.lottoResult.insert_Result(winning_numbers);
 
             return res.status(201).json({ message: "Lotto result saved successfully.", data: newResult });
         } catch (error) {

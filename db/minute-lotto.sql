@@ -51,12 +51,7 @@ CREATE TABLE `lotto_draws` (
   `created_at` timestamp NOT NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
---
--- Dumping data for table `lotto_draws`
---
 
-INSERT INTO `lotto_draws` (`draw_id`, `draw_time`, `winning_numbers`, `created_at`) VALUES
-(1, '2025-03-14 20:45:32', '1, 6, 8, 12, 20, 33', '2025-03-15 04:45:32');
 
 -- --------------------------------------------------------
 

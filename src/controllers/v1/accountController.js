@@ -77,7 +77,7 @@ class AccountController{
             console.log(`Logging out user ID: ${userId}`); // Debugging log
     
             // Optional: Implement session/token invalidation logic here
-            const result = await this.user.logout_user(userId);
+            const result = await this.user.logout_user(token);
             console.log("Logout result:", result); // Debugging log
     
             res.json({ success: true, message: "Logout successful" });

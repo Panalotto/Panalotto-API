@@ -4,9 +4,12 @@ import accountRouter from './accountRoutes.js';
 import homeRouter from './homeRoutes.js';
 import resultRouter from './resultRoutes.js';
 import talpakRouter from './talpakRoutes.js';
+import winnerRouter from './winningRoutes.js';
 
 
 const v1 = new Router();
+
+
 
 // account
 v1.use('/account', accountRouter);
@@ -20,12 +23,9 @@ v1.use('/result', resultRouter);
 //Talpak
 v1.use('/talpak', talpakRouter);
 
+v1.use("/winner", winnerRouter);
 
 
-// v1.use('/latest-drawId', resultRouter);
-
-
-// app.use("/api/countdown", countdownRoutes(io));
 
 
 export default v1;
